@@ -320,7 +320,12 @@ const TOTAL = TASKS.reduce((a,t)=>a+t.subs.length,0);
 
 /* ── config (stored in localStorage, not synced — each user sets their own) ── */
 const CFG_KEY = 'mip_cfg';
-function getCfg(){ try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(e){return{}} }
+function getCfg(){
+  return {
+    apikey: "$2a$10$8h.rcskxHQl1d4vX2frEjeKa4tE34wLta88vRYj09fZb/AK2MOyuG",
+    binid: "6a0c036a6877513b2796baff"
+  };
+}
 function saveCfg(c){ localStorage.setItem(CFG_KEY,JSON.stringify(c)) }
 
 function saveConfig(){
@@ -374,7 +379,7 @@ function setSyncStatus(status){
 async function loadData(){
   const cfg = getCfg();
   if(!cfg.apikey||!cfg.binid){
-    document.getElementById('setup-banner').classList.add('show');
+    // setup banner disabled because config is hardcoded;
     setSyncStatus('none');
     renderTasks();
     renderLogs();
