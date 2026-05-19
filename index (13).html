@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MIP Phase 1 Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-med:#ccc9be;
+  --text:#1a1917;--text-2:#6b6860;--text-3:#9d9b94;
+  --teal:#0F6E56;--teal-bg:#e8f5f0;--teal-mid:#1D9E75;
+  --purple:#4a3fa8;--purple-bg:#eeedf8;
+  --amber:#8a5c00;--amber-bg:#fdf3dc;
+  --gray-bg:#f0efe9;--red:#9b2020;--red-bg:#fdeaea;
+  --radius:10px;--radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+.shell{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
+
+/* setup banner */
+.setup-banner{background:#fff8e1;border:1px solid #f0d060;border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:13px;color:#6b4f00;display:none}
+.setup-banner.show{display:block}
+.setup-banner strong{font-weight:600;display:block;margin-bottom:6px;font-size:14px}
+.setup-banner code{font-family:'DM Mono',monospace;background:#fef3c7;padding:1px 5px;border-radius:3px;font-size:12px}
+.setup-input-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.setup-input{flex:1;min-width:200px;padding:7px 11px;border-radius:var(--radius-sm);border:1px solid var(--border-med);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none}
+.setup-input:focus{border-color:var(--teal-mid)}
+.btn-setup{padding:7px 16px;border-radius:var(--radius-sm);border:none;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.btn-setup:hover{opacity:.88}
+
+/* header */
+.header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:1.75rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.project-label{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.project-title{font-size:24px;font-weight:600;color:var(--text);margin-bottom:4px}
+.project-sub{font-size:13px;color:var(--text-2)}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.deadline-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;background:var(--amber-bg);color:var(--amber);padding:5px 12px;border-radius:100px;border:1px solid #e8d090}
+.sync-status{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:5px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--border-med)}
+.sync-dot.ok{background:#1D9E75}
+.sync-dot.err{background:#e24b4a}
+.sync-dot.loading{background:#EF9F27;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.people-row{display:flex;gap:6px}
+.person-chip{font-size:11px;padding:3px 10px;border-radius:100px;border:1px solid var(--border-med);background:var(--surface);color:var(--text-2)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;width:fit-content}
+.tab{padding:6px 18px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-2);border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:all .15s}
+.tab.on{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.75rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text-3);margin-top:4px}
+.global-bar-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px}
+.global-bar-fill{height:5px;background:var(--teal-mid);border-radius:3px;transition:width .4s}
+
+/* timeline */
+.tl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.5rem}
+.sec-label{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px}
+.tl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tl-week{padding:10px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border)}
+.tl-wk-num{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;color:var(--text-3);margin-bottom:6px}
+.tl-chip{display:block;font-size:11px;font-weight:500;padding:3px 7px;border-radius:4px;margin-bottom:3px;line-height:1.4}
+
+/* task list */
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;transition:border-color .15s}
+.task-card:hover{border-color:var(--border-med)}
+.task-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none}
+.t-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;flex-shrink:0;font-family:'DM Mono',monospace}
+.t-name{font-size:14px;font-weight:500;color:var(--text);flex:1}
+.t-week{font-size:11px;color:var(--text-3);flex-shrink:0}
+.t-bar-wrap{width:70px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;flex-shrink:0}
+.t-bar-fill{height:4px;border-radius:2px;background:var(--teal-mid);transition:width .3s}
+.t-pct{font-size:12px;color:var(--text-2);min-width:30px;text-align:right;font-variant-numeric:tabular-nums;font-family:'DM Mono',monospace}
+.t-chev{font-size:16px;color:var(--text-3);transition:transform .2s;flex-shrink:0}
+.t-chev.open{transform:rotate(180deg)}
+.sub-list{display:none;border-top:1px solid var(--border);padding:4px 0}
+.sub-list.open{display:block}
+.sub-row{display:flex;align-items:flex-start;gap:10px;padding:8px 16px;transition:background .1s}
+.sub-row:hover{background:var(--bg)}
+.chk{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border-med);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none}
+.chk.done{background:var(--teal);border-color:var(--teal)}
+.chk.done::after{content:'';display:block;width:4px;height:7px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px)}
+.sub-text{font-size:13px;color:var(--text-2);flex:1;line-height:1.4}
+.sub-text.done{text-decoration:line-through;color:var(--text-3)}
+
+/* log */
+.log-compose{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem}
+.compose-top{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+select,textarea{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 11px;outline:none;transition:border-color .15s}
+select:focus,textarea:focus{border-color:var(--border-med)}
+select{cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239d9b94' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+textarea{width:100%;resize:vertical;min-height:72px;line-height:1.5}
+.compose-actions{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.char-count{font-size:11px;color:var(--text-3)}
+.btn{padding:8px 18px;border-radius:var(--radius-sm);border:none;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.log-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.log-entry{padding:13px 16px;border-bottom:1px solid var(--border)}
+.log-entry:last-child{border-bottom:none}
+.log-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.log-who{font-size:13px;font-weight:600;color:var(--text)}
+.log-time{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace}
+.log-type{font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px}
+.log-del{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:18px;line-height:1;padding:0 2px;transition:color .15s}
+.log-del:hover{color:var(--red)}
+.log-body{font-size:13px;color:var(--text-2);line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.empty-state{padding:2.5rem;text-align:center;color:var(--text-3);font-size:13px}
+.loading-state{padding:1.5rem;text-align:center;color:var(--text-3);font-size:13px}
+
+@media(max-width:600px){
+  .tl-grid{grid-template-columns:1fr 1fr}
+  .header{flex-direction:column}
+  .header-right{align-items:flex-start}
+  .t-week,.t-bar-wrap{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SETUP BANNER — shown when no API key configured -->
+  <div class="setup-banner" id="setup-banner">
+    <strong>⚙️ One-time setup needed</strong>
+    This tracker syncs between you and Rahul sir via <strong>JSONBin</strong> — a free cloud store.
+    It takes 2 minutes:
+    <ol style="margin:8px 0 0 16px;line-height:2">
+      <li>Go to <a href="https://jsonbin.io" target="_blank" style="color:var(--teal);text-decoration:underline">jsonbin.io</a> → sign up free</li>
+      <li>Click <strong>API Keys</strong> → copy your <code>Master Key</code></li>
+      <li>Create a new <strong>Bin</strong> with this JSON: <code>{"checked":{},"logs":[]}</code> → copy the <strong>Bin ID</strong></li>
+      <li>Paste both below and click Save — the page will reload and sync</li>
+    </ol>
+    <div class="setup-input-row">
+      <input class="setup-input" id="input-apikey" placeholder="JSONBin Master Key ($2b$10$...)" type="password"/>
+      <input class="setup-input" id="input-binid" placeholder="Bin ID (67abc12345...)" style="max-width:220px"/>
+      <button class="btn-setup" onclick="saveConfig()">Save &amp; connect</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="project-label">MPi · Corporate Development &amp; Strategy</div>
+      <div class="project-title">MIP Phase 1 Tracker</div>
+      <div class="project-sub">Market Intelligence Platform · India · Confidential</div>
+    </div>
+    <div class="header-right">
+      <div class="deadline-badge">⏱ Deadline: 4 weeks</div>
+      <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Not connected</span></div>
+      <div class="people-row">
+        <span class="person-chip">Eshaan</span>
+        <span class="person-chip">Rahul sir</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('progress')">Progress</button>
+    <button class="tab" onclick="switchTab('log')">Daily log</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Subtasks done</div>
+      <div class="stat-val" id="s-done">—</div>
+      <div class="stat-sub" id="s-of">of 29 total</div>
+      <div class="global-bar-wrap"><div class="global-bar-fill" id="global-bar" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Overall progress</div>
+      <div class="stat-val" id="s-pct">—</div>
+      <div class="stat-sub">check off items below</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Log entries</div>
+      <div class="stat-val" id="s-logs">—</div>
+      <div class="stat-sub">updates posted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Blockers</div>
+      <div class="stat-val" id="s-blockers">—</div>
+      <div class="stat-sub">flagged</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS VIEW -->
+  <div id="view-progress">
+    <div class="tl-card">
+      <div class="sec-label">4-week timeline</div>
+      <div class="tl-grid">
+        <div class="tl-week">
+          <div class="tl-wk-num">WEEK 1</div>
+          <span class="tl-chip" style="background:#e8f5f0;color:#0F6E56">T1 — Data foundation</span>
+        </div>
+        <div class="tl-week">
+          <div class="tl-wk-num">WEEK 2</div>
+          <span class="tl-chip" style="background:#e8f5f0;color:#0F6E56">T1 — wrap up</span>
+          <span class="tl-chip" style="background:#eeedf8;color:#4a3fa8">T2 — Cards forecast</span>
+          <span class="tl-chip" style="background:#eeedf8;color:#4a3fa8">T3 — Txn volumes</span>
+        </div>
+        <div class="tl-week">
+          <div class="tl-wk-num">WEEK 3</div>
+          <span class="tl-chip" style="background:#eeedf8;color:#4a3fa8">T2 — wrap up</span>
+          <span class="tl-chip" style="background:#fdf3dc;color:#8a5c00">T4 — UPI model</span>
+          <span class="tl-chip" style="background:#fdf3dc;color:#8a5c00">T5 — Dashboard</span>
+        </div>
+        <div class="tl-week">
+          <div class="tl-wk-num">WEEK 4</div>
+          <span class="tl-chip" style="background:#fdf3dc;color:#8a5c00">T5 — polish</span>
+          <span class="tl-chip" style="background:#f0efe9;color:#5F5E5A">T6 — Geo note</span>
+          <span class="tl-chip" style="background:#f0efe9;color:#5F5E5A">Buffer / review</span>
+        </div>
+      </div>
+    </div>
+    <div id="task-list"><div class="loading-state">Loading tasks…</div></div>
+  </div>
+
+  <!-- LOG VIEW -->
+  <div id="view-log" style="display:none">
+    <div class="log-compose">
+      <div class="compose-top">
+        <select id="who-sel">
+          <option value="Eshaan">Eshaan</option>
+          <option value="Rahul sir">Rahul sir</option>
+        </select>
+        <select id="type-sel">
+          <option value="update">Update</option>
+          <option value="blocker">Blocker</option>
+          <option value="done">Completed</option>
+          <option value="note">Note</option>
+        </select>
+      </div>
+      <textarea id="log-input" placeholder="What did you work on today? Any blockers or questions?" oninput="updateChar()"></textarea>
+      <div class="compose-actions">
+        <span class="char-count" id="char-count">0 characters</span>
+        <button class="btn" id="post-btn" onclick="postLog()">Post update</button>
+      </div>
+    </div>
+    <div class="log-card">
+      <div id="log-list"><div class="loading-state">Loading updates…</div></div>
+    </div>
+  </div>
+
+</div>
+<script>
+const TASKS = [
+  {id:'t1',label:'T1',name:'Data foundation',week:'Wk 1–2',
+   bg:'#e8f5f0',tc:'#0F6E56',
+   subs:[
+    'Pull full RBI Payment System Indicators from Apr 2004 (not just 74 months)',
+    'Extend NPCI UPI stats backwards beyond 118 months where possible',
+    'Source issuer-level cards outstanding from RBI annual reports',
+    'Replace hardcoded column indices with header-name matching',
+    'Add validation layer — loud error if expected columns missing',
+    'Add data freshness check (new vs previously processed file)',
+    'Handle corrupt / partial downloads with clear error messages',
+    'Deterministic file selection when multiple files match glob pattern',
+    'Remove ghost dependencies from pyproject.toml'
+  ]},
+  {id:'t2',label:'T2',name:'Cards outstanding forecast',week:'Wk 2–3',
+   bg:'#eeedf8',tc:'#4a3fa8',
+   subs:[
+    'Build issuer-level credit card outstanding model',
+    'Build issuer-level debit card outstanding model',
+    'Aggregate issuer forecasts → India total; document coverage %',
+    'Run rolling cross-validation (48m initial, 6m horizon, 6m step)',
+    'Verify & quantify debit card structural break with data',
+    'Model UPI displacement effect (changepoint or regressor)',
+    'Stress-test credit card model against COVID period (Apr–May 2020)',
+    'Annotate all structural events on charts',
+    'Document key coefficients in structured format for recalibration',
+    'Include 90% confidence intervals in all outputs'
+  ]},
+  {id:'t3',label:'T3',name:'Transaction volume forecasting',week:'Wk 2–3',
+   bg:'#eeedf8',tc:'#4a3fa8',
+   subs:[
+    'Run rolling CV on credit and debit volume series',
+    'Validate 2.1% MAPE across earlier windows incl. COVID + Demonetisation',
+    'Apply structural event annotation framework (same as T2)',
+    'Test whether txn volumes improve cards outstanding forecast accuracy'
+  ]},
+  {id:'t4',label:'T4',name:'UPI as explicit model variable',week:'Wk 3',
+   bg:'#fdf3dc',tc:'#8a5c00',
+   subs:[
+    'Quantify UPI vs debit displacement — linear, lagged, or threshold?',
+    'Add UPI as regressor in debit card models via Prophet add_regressor()',
+    'Measure MAPE improvement vs baseline; document if it does not help',
+    'Test UPI relationship with credit card usage (complementary or substitutive)',
+    'Write plain-English paragraph on UPI–debit relationship for notebook'
+  ]},
+  {id:'t5',label:'T5',name:'Stakeholder dashboard',week:'Wk 3–4',
+   bg:'#fdf3dc',tc:'#8a5c00',
+   subs:[
+    'Build single-file self-contained HTML dashboard (no server needed)',
+    'Cards outstanding forecast with confidence bands (credit + debit)',
+    'Transaction volume forecast (credit + debit) with event annotations',
+    'Write 3–5 plain-English takeaways for non-technical audience',
+    'Add data provenance note (source, last update, next RBI publication)'
+  ]},
+  {id:'t6',label:'T6',name:'Geography expansion design note',week:'Wk 4',
+   bg:'#f0efe9',tc:'#5F5E5A',
+   subs:[
+    'Identify RBI/NPCI equivalents in US, EU, and SE Asia',
+    'Identify dominant alternative payment rails per market',
+    'Identify major card issuers and public data availability per market',
+    'Describe what in India architecture is reusable vs needs to change',
+    'Flag data availability and quality risks per geography'
+  ]}
+];
+const TOTAL = TASKS.reduce((a,t)=>a+t.subs.length,0);
+
+/* ── config (stored in localStorage, not synced — each user sets their own) ── */
+const CFG_KEY = 'mip_cfg';
+function getCfg(){ try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(e){return{}} }
+function saveCfg(c){ localStorage.setItem(CFG_KEY,JSON.stringify(c)) }
+
+function saveConfig(){
+  const key = document.getElementById('input-apikey').value.trim();
+  const bin = document.getElementById('input-binid').value.trim();
+  if(!key||!bin){ alert('Please fill in both the API key and Bin ID.'); return; }
+  saveCfg({apikey:key, binid:bin});
+  location.reload();
+}
+
+/* ── JSONBin API ── */
+async function fetchBin(){
+  const {apikey,binid} = getCfg();
+  if(!apikey||!binid) return null;
+  try{
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${binid}/latest`,{
+      headers:{'X-Master-Key':apikey,'X-Bin-Meta':'false'}
+    });
+    if(!r.ok) throw new Error(r.status);
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+async function updateBin(data){
+  const {apikey,binid} = getCfg();
+  if(!apikey||!binid) return false;
+  try{
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${binid}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':apikey},
+      body: JSON.stringify(data)
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+/* ── state ── */
+let STATE = {checked:{}, logs:[]};
+let synced = false;
+
+function setSyncStatus(status){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot';
+  if(status==='ok'){ dot.classList.add('ok'); lbl.textContent='Synced'; synced=true; }
+  else if(status==='err'){ dot.classList.add('err'); lbl.textContent='Sync error'; }
+  else if(status==='loading'){ dot.classList.add('loading'); lbl.textContent='Syncing…'; }
+  else{ lbl.textContent='Not connected'; }
+}
+
+async function loadData(){
+  const cfg = getCfg();
+  if(!cfg.apikey||!cfg.binid){
+    document.getElementById('setup-banner').classList.add('show');
+    setSyncStatus('none');
+    renderTasks();
+    renderLogs();
+    updateStats();
+    return;
+  }
+  setSyncStatus('loading');
+  const data = await fetchBin();
+  if(data){
+    STATE = data;
+    if(!STATE.checked) STATE.checked={};
+    if(!STATE.logs) STATE.logs=[];
+    setSyncStatus('ok');
+  } else {
+    setSyncStatus('err');
+  }
+  renderTasks();
+  renderLogs();
+  updateStats();
+}
+
+async function persistState(){
+  setSyncStatus('loading');
+  const ok = await updateBin(STATE);
+  setSyncStatus(ok?'ok':'err');
+}
+
+/* ── render tasks ── */
+function renderTasks(){
+  const el = document.getElementById('task-list');
+  el.innerHTML = TASKS.map(t=>{
+    const done = t.subs.filter((_,i)=>STATE.checked[t.id+'_'+i]).length;
+    const pct = Math.round(done/t.subs.length*100);
+    return `<div class="task-card">
+      <div class="task-header" onclick="toggleTask('${t.id}')">
+        <span class="t-badge" style="background:${t.bg};color:${t.tc}">${t.label}</span>
+        <span class="t-name">${t.name}</span>
+        <span class="t-week">${t.week}</span>
+        <div class="t-bar-wrap"><div class="t-bar-fill" style="width:${pct}%"></div></div>
+        <span class="t-pct">${pct}%</span>
+        <span class="t-chev" id="chev-${t.id}">&#8964;</span>
+      </div>
+      <div class="sub-list" id="subs-${t.id}">
+        ${t.subs.map((s,i)=>{
+          const k=t.id+'_'+i;
+          const d=!!STATE.checked[k];
+          return `<div class="sub-row">
+            <div class="chk${d?' done':''}" onclick="toggleCheck('${t.id}',${i})"></div>
+            <span class="sub-text${d?' done':''}">${s}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTask(id){
+  const s=document.getElementById('subs-'+id);
+  const c=document.getElementById('chev-'+id);
+  const open=s.classList.contains('open');
+  s.classList.toggle('open',!open);
+  c.classList.toggle('open',!open);
+}
+
+async function toggleCheck(tid,idx){
+  const k=tid+'_'+idx;
+  STATE.checked[k]=!STATE.checked[k];
+  renderTasks();
+  updateStats();
+  await persistState();
+}
+
+/* ── stats ── */
+function updateStats(){
+  const done=Object.values(STATE.checked).filter(Boolean).length;
+  const pct=Math.round(done/TOTAL*100);
+  const blockers=STATE.logs.filter(l=>l.type==='blocker').length;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-of').textContent='of '+TOTAL+' total';
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('s-logs').textContent=STATE.logs.length;
+  document.getElementById('s-blockers').textContent=blockers;
+  document.getElementById('global-bar').style.width=pct+'%';
+}
+
+/* ── log ── */
+const TYPE_STYLES={
+  update:{bg:'#e8f5f0',tc:'#0F6E56',label:'Update'},
+  blocker:{bg:'#fdeaea',tc:'#9b2020',label:'Blocker'},
+  done:{bg:'#eeedf8',tc:'#4a3fa8',label:'Completed'},
+  note:{bg:'#f0efe9',tc:'#5F5E5A',label:'Note'}
+};
+
+function renderLogs(){
+  const el=document.getElementById('log-list');
+  if(!STATE.logs.length){
+    el.innerHTML='<div class="empty-state">No updates yet — post the first one above.</div>';
+    return;
+  }
+  el.innerHTML=STATE.logs.map((l,i)=>{
+    const d=new Date(l.ts);
+    const ds=d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})
+      +' · '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const st=TYPE_STYLES[l.type]||TYPE_STYLES.note;
+    const safe=l.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div class="log-entry">
+      <div class="log-meta">
+        <span class="log-who">${l.who}</span>
+        <span class="log-time">${ds}</span>
+        <span class="log-type" style="background:${st.bg};color:${st.tc}">${st.label}</span>
+        <button class="log-del" onclick="deleteLog(${i})" title="Delete">×</button>
+      </div>
+      <div class="log-body">${safe}</div>
+    </div>`;
+  }).join('');
+}
+
+async function postLog(){
+  const text=document.getElementById('log-input').value.trim();
+  if(!text) return;
+  const btn=document.getElementById('post-btn');
+  btn.disabled=true; btn.textContent='Posting…';
+  const entry={
+    who:document.getElementById('who-sel').value,
+    type:document.getElementById('type-sel').value,
+    text,ts:Date.now()
+  };
+  STATE.logs.unshift(entry);
+  renderLogs();
+  updateStats();
+  await persistState();
+  document.getElementById('log-input').value='';
+  document.getElementById('char-count').textContent='0 characters';
+  btn.disabled=false; btn.textContent='Post update';
+}
+
+async function deleteLog(idx){
+  if(!confirm('Delete this entry?')) return;
+  STATE.logs.splice(idx,1);
+  renderLogs();
+  updateStats();
+  await persistState();
+}
+
+function updateChar(){
+  const n=document.getElementById('log-input').value.length;
+  document.getElementById('char-count').textContent=n+' character'+(n===1?'':'s');
+}
+
+function switchTab(v){
+  document.getElementById('view-progress').style.display=v==='progress'?'block':'none';
+  document.getElementById('view-log').style.display=v==='log'?'block':'none';
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.classList.toggle('on',(v==='progress'&&b.textContent==='Progress')||(v==='log'&&b.textContent==='Daily log'));
+  });
+}
+
+/* ── auto-refresh every 60s so Rahul's updates appear without reload ── */
+setInterval(async()=>{
+  const data=await fetchBin();
+  if(data){ STATE=data; if(!STATE.checked)STATE.checked={}; if(!STATE.logs)STATE.logs=[]; renderTasks();renderLogs();updateStats();setSyncStatus('ok'); }
+},60000);
+
+loadData();
+</script>
+</body>
+</html>
